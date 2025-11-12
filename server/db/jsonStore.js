@@ -7,12 +7,21 @@ const readJSON = async (file) => {
   const filePath = path.join(dataPath, file);
   await fs.ensureFile(filePath);
   const content = await fs.readFile(filePath, "utf-8");
-  return content ? JSON.parse(content) : [];
+  if (!content) return [];
+  const parsedContent = JSON.parse(content);
+  return parsedContent.items || [];
 };
 
 const writeJSON = async (file, data) => {
   const filePath = path.join(dataPath, file);
-  await fs.writeJson(filePath, data, { spaces: 2 });
+  const contentToWrite = {
+    items: data,
+    meta: {
+      lastUpdated: new Date().toISOString(),
+      count: data.length,
+    },
+  };
+  await fs.writeJson(filePath, contentToWrite, { spaces: 2 });
 };
 
 module.exports = { readJSON, writeJSON };

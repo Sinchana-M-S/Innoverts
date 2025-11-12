@@ -70,7 +70,7 @@ export default function Home() {
       if (category) params.category = category;
       
       try {
-        const { data } = await api.get('/courses', { params });
+        const { data } = await api.get('/api/courses', { params });
         setCourses(data.length > 0 ? data : dummyCourses);
       } catch (error) {
         // Fallback to dummy data if API fails
@@ -88,8 +88,8 @@ export default function Home() {
         }
         setCourses(filtered);
       }
-    } catch (error) {
-      console.error('Failed to fetch courses:', error);
+    } catch (err) {
+      console.error('Failed to fetch courses:', err);
       setCourses(dummyCourses);
     } finally {
       setLoading(false);

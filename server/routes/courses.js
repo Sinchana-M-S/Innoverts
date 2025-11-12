@@ -26,8 +26,11 @@ router.post("/:id/enroll", async (req, res) => {
 
   if (!course) return res.status(404).json({ message: "Course not found" });
 
-  if (!user.completedCourses.includes(req.params.id)) {
-    user.completedCourses.push(req.params.id);
+  if (!user.enrolledCourses) {
+    user.enrolledCourses = [];
+  }
+  if (!user.enrolledCourses.includes(req.params.id)) {
+    user.enrolledCourses.push(req.params.id);
   }
 
   await writeJSON("users.json", users);

@@ -1,6 +1,7 @@
 // Dummy data for courses and videos
 export const dummyCourses = [
   {
+    id: '1',
     _id: '1',
     title: 'Complete Web Development Bootcamp',
     description: 'Learn HTML, CSS, JavaScript, React, Node.js, and more. Build real-world projects and become a full-stack developer.',
@@ -18,20 +19,20 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         duration: 1200,
         order: 0,
-        subtitles: new Map([
-          ['en', 'Welcome to web development. In this course, we will cover...'],
-          ['es', 'Bienvenido al desarrollo web. En este curso, cubriremos...'],
-          ['fr', 'Bienvenue au développement web. Dans ce cours, nous couvrirons...'],
-        ]),
+        subtitles: {
+          en: 'Welcome to web development. In this course, we will cover...',
+          es: 'Bienvenido al desarrollo web. En este curso, cubriremos...',
+          fr: 'Bienvenue au développement web. Dans ce cours, nous couvrirons...',
+        },
         boardTextData: [
           {
             text: 'HTML Basics',
             timestamp: 60,
             language: 'en',
-            translatedText: new Map([
-              ['es', 'Conceptos básicos de HTML'],
-              ['fr', 'Bases HTML'],
-            ]),
+            translatedText: {
+              es: 'Conceptos básicos de HTML',
+              fr: 'Bases HTML',
+            },
           },
         ],
       },
@@ -40,10 +41,10 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
         duration: 1800,
         order: 1,
-        subtitles: new Map([
-          ['en', 'CSS allows you to style your web pages...'],
-          ['es', 'CSS te permite dar estilo a tus páginas web...'],
-        ]),
+        subtitles: {
+          en: 'CSS allows you to style your web pages...',
+          es: 'CSS te permite dar estilo a tus páginas web...',
+        },
         boardTextData: [],
       },
       {
@@ -51,9 +52,9 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
         duration: 2400,
         order: 2,
-        subtitles: new Map([
-          ['en', 'JavaScript is the programming language of the web...'],
-        ]),
+        subtitles: {
+          en: 'JavaScript is the programming language of the web...',
+        },
         boardTextData: [],
       },
     ],
@@ -69,6 +70,7 @@ export const dummyCourses = [
     createdAt: new Date('2024-01-15'),
   },
   {
+    id: '2',
     _id: '2',
     title: 'UI/UX Design Masterclass',
     description: 'Learn design principles, user research, wireframing, prototyping, and create stunning user interfaces.',
@@ -86,7 +88,9 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
         duration: 1500,
         order: 0,
-        subtitles: new Map([['en', 'Good design is about solving problems...']]),
+        subtitles: {
+          en: 'Good design is about solving problems...',
+        },
         boardTextData: [],
       },
       {
@@ -94,7 +98,9 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
         duration: 2100,
         order: 1,
-        subtitles: new Map([['en', 'Understanding your users is crucial...']]),
+        subtitles: {
+          en: 'Understanding your users is crucial...',
+        },
         boardTextData: [],
       },
     ],
@@ -109,6 +115,7 @@ export const dummyCourses = [
     createdAt: new Date('2024-02-01'),
   },
   {
+    id: '3',
     _id: '3',
     title: 'Data Science with Python',
     description: 'Learn data analysis, machine learning, and data visualization using Python and popular libraries.',
@@ -126,7 +133,9 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
         duration: 1800,
         order: 0,
-        subtitles: new Map([['en', 'Python is a powerful language for data science...']]),
+        subtitles: {
+          en: 'Python is a powerful language for data science...',
+        },
         boardTextData: [],
       },
       {
@@ -134,7 +143,9 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
         duration: 2400,
         order: 1,
-        subtitles: new Map([['en', 'Pandas is essential for data manipulation...']]),
+        subtitles: {
+          en: 'Pandas is essential for data manipulation...',
+        },
         boardTextData: [],
       },
     ],
@@ -149,6 +160,7 @@ export const dummyCourses = [
     createdAt: new Date('2024-02-10'),
   },
   {
+    id: '4',
     _id: '4',
     title: 'Business Strategy Fundamentals',
     description: 'Learn how to develop and execute business strategies, analyze markets, and drive growth.',
@@ -166,7 +178,9 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
         duration: 1500,
         order: 0,
-        subtitles: new Map([['en', 'Strategy is about making choices...']]),
+        subtitles: {
+          en: 'Strategy is about making choices...',
+        },
         boardTextData: [],
       },
     ],
@@ -181,6 +195,7 @@ export const dummyCourses = [
     createdAt: new Date('2024-02-20'),
   },
   {
+    id: '5',
     _id: '5',
     title: 'Spanish for Beginners',
     description: 'Learn Spanish from scratch. Master grammar, vocabulary, and conversation skills.',
@@ -198,10 +213,10 @@ export const dummyCourses = [
         videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
         duration: 1200,
         order: 0,
-        subtitles: new Map([
-          ['en', 'Welcome to Spanish for beginners...'],
-          ['es', 'Bienvenido al español para principiantes...'],
-        ]),
+        subtitles: {
+          en: 'Welcome to Spanish for beginners...',
+          es: 'Bienvenido al español para principiantes...',
+        },
         boardTextData: [],
       },
     ],

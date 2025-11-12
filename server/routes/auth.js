@@ -11,7 +11,7 @@ router.get("/profile", async (req, res) => {
 
   if (!guest) {
     guest = {
-      id: uuid(),
+      _id: uuid(), // Changed to _id
       role: "guest",
       name: "Guest User",
       email: "guest@sarvasva.com",
@@ -19,6 +19,7 @@ router.get("/profile", async (req, res) => {
       skills: [],
       bio: "",
       completedCourses: [],
+      enrolledCourses: [], // Added enrolledCourses for consistency
       createdCourses: []
     };
     users.push(guest);
@@ -35,11 +36,27 @@ router.put("/profile", async (req, res) => {
 
   guest = { ...guest, ...req.body };
 
-  const index = users.findIndex((u) => u.id === guest.id);
+  const index = users.findIndex((u) => u._id === guest._id); // Changed to _id
   users[index] = guest;
 
   await writeJSON("users.json", users);
   res.json(guest);
+});
+
+// ✅ Login endpoint
+router.post("/login", async (req, res) => {
+  const { email, password, role } = req.body;
+  const users = await readJSON("users.json");
+
+  const user = users.find(
+    (u) => u.email === email && u.password === password && u.role === role
+  );
+
+  if (!user) {
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+
+  res.json(user);
 });
 
 module.exports = router;

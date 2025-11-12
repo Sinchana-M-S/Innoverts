@@ -1,1 +1,46 @@
-[]
+{
+  "items": [
+    {
+      "_id": "de36910e-9e2a-4a65-846e-dff38c2b3d65",
+      "role": "guest",
+      "name": "Guest User",
+      "email": "guest@sarvasva.com",
+      "credits": 0,
+      "skills": [],
+      "bio": "",
+      "completedCourses": [],
+      "enrolledCourses": [],
+      "createdCourses": []
+    },
+    {
+      "_id": "student1",
+      "role": "student",
+      "name": "Student One",
+      "email": "student@example.com",
+      "password": "password123",
+      "credits": 150,
+      "skills": ["Web Development", "UI/UX Design"],
+      "bio": "Passionate learner.",
+      "enrolledCourses": ["1", "2"],
+      "completedCourses": ["1"],
+      "createdCourses": []
+    },
+    {
+      "_id": "instructor1",
+      "role": "instructor",
+      "name": "Instructor One",
+      "email": "instructor@example.com",
+      "password": "password123",
+      "credits": 500,
+      "skills": ["Web Development", "Teaching"],
+      "bio": "Experienced instructor.",
+      "enrolledCourses": [],
+      "completedCourses": [],
+      "createdCourses": ["1"]
+    }
+  ],
+  "meta": {
+    "lastUpdated": "2025-11-12T09:11:37.865Z",
+    "count": 3
+  }
+}

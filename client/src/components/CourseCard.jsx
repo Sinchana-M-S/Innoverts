@@ -73,7 +73,7 @@ export default function CourseCard({ course, index = 0 }) {
           </div>
 
           {/* CTA Button */}
-          <Link to={`/course/${course._id}`} className="mt-4 block">
+          <Link to={`/course/${course.id || course._id}`} className="mt-4 block">
             <Button variant="primary" className="w-full">
               View Course
             </Button>

@@ -1,8 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 import useThemeStore from './store/themeStore';
+import useAuthStore from './store/authStore'; // Import auth store
 import Navbar from './components/Navbar';
+import Login from './components/Login'; // Import Login component
+import Modal from './components/ui/Modal';
 
 // Pages
 import Home from './pages/Home';
@@ -25,6 +28,14 @@ import AI from './pages/AI';
 
 function App() {
   const { theme } = useThemeStore();
+  const {
+    user,
+    isAuthenticated,
+    fetchUser,
+    showLoginModal,
+    openLoginModal,
+    closeLoginModal,
+  } = useAuthStore(); // Get user and isAuthenticated
 
   // ✅ Theme handling stays same
   useEffect(() => {
@@ -42,13 +53,65 @@ function App() {
         const root = document.documentElement;
         root.classList.remove('dark', 'light');
         root.classList.add(savedTheme);
-      } catch (e) {
+      } catch (err) {
         document.documentElement.classList.add('dark');
       }
     } else {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  // Fetch user on app load
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  // Private Route Component
+  const PrivateRoute = ({ children, allowedRoles }) => {
+    useEffect(() => {
+      if (!isAuthenticated) {
+        openLoginModal();
+      }
+    }, [isAuthenticated, openLoginModal]);
+
+    if (!isAuthenticated) {
+      return <div className="min-h-[60vh]" aria-hidden />;
+    }
+
+    if (allowedRoles && !allowedRoles.includes(user?.role)) {
+      return (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+          <p className="text-center text-base font-medium">
+            Your account doesn&apos;t have permission to access this area.
+          </p>
+        </div>
+      );
+    }
+    return children;
+  };
+
+  const LoginRedirect = () => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      openLoginModal();
+      return () => closeLoginModal();
+    }, [openLoginModal, closeLoginModal]);
+
+    useEffect(() => {
+      if (isAuthenticated) {
+        navigate('/', { replace: true });
+      }
+    }, [isAuthenticated, navigate]);
+
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center text-gray-500 dark:text-gray-400">
+        <p className="text-center text-base font-medium">
+          Please log in to continue.
+        </p>
+      </div>
+    );
+  };
 
   return (
     <Router>
@@ -58,37 +121,49 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<LoginRedirect />} />
 
-            {/* ✅ No login route */}
-            {/* <Route path="/login" element={<Login />} /> */}
-
-            {/* PUBLIC course pages */}
+            {/* Course pages - detail is public, player requires auth */}
             <Route path="/course/:id" element={<CourseDetail />} />
-            <Route path="/course/:id/play" element={<CoursePlayer />} />
-            <Route path="/ai" element={<AI />} />
+            <Route
+              path="/course/:id/play"
+              element={
+                <PrivateRoute allowedRoles={['student', 'instructor']}>
+                  <CoursePlayer />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/ai"
+              element={
+                <PrivateRoute allowedRoles={['student', 'instructor']}>
+                  <AI />
+                </PrivateRoute>
+              }
+            />
 
+            {/* STUDENT Routes */}
+            <Route path="/student/courses" element={<PrivateRoute allowedRoles={['student']}><StudentCourses /></PrivateRoute>} />
+            <Route path="/student/credits" element={<PrivateRoute allowedRoles={['student']}><StudentCredits /></PrivateRoute>} />
+            <Route path="/student/completed" element={<PrivateRoute allowedRoles={['student']}><StudentCompleted /></PrivateRoute>} />
+            <Route path="/student/documents" element={<PrivateRoute allowedRoles={['student']}><StudentDocuments /></PrivateRoute>} />
+            <Route path="/student/summarizer" element={<PrivateRoute allowedRoles={['student']}><StudentSummarizer /></PrivateRoute>} />
+            <Route path="/student/chat" element={<PrivateRoute allowedRoles={['student']}><StudentChat /></PrivateRoute>} />
+            <Route path="/student/assessments" element={<PrivateRoute allowedRoles={['student']}><StudentAssessments /></PrivateRoute>} />
 
-            {/* ✅ Student Routes – all public */}
-            <Route path="/student/courses" element={<StudentCourses />} />
-            <Route path="/student/credits" element={<StudentCredits />} />
-            <Route path="/student/completed" element={<StudentCompleted />} />
-            <Route path="/student/documents" element={<StudentDocuments />} />
-            <Route path="/student/summarizer" element={<StudentSummarizer />} />
-            <Route path="/student/chat" element={<StudentChat />} />
-            <Route path="/student/assessments" element={<StudentAssessments />} />
+            {/* INSTRUCTOR Routes */}
+            <Route path="/instructor/upload" element={<PrivateRoute allowedRoles={['instructor']}><InstructorUpload /></PrivateRoute>} />
+            <Route path="/instructor/live-classes" element={<PrivateRoute allowedRoles={['instructor']}><InstructorLiveClasses /></PrivateRoute>} />
+            <Route path="/instructor/credits" element={<PrivateRoute allowedRoles={['instructor']}><InstructorCredits /></PrivateRoute>} />
 
-            {/* ✅ Instructor Routes – all public */}
-            <Route path="/instructor/upload" element={<InstructorUpload />} />
-            <Route path="/instructor/live-classes" element={<InstructorLiveClasses />} />
-            <Route path="/instructor/credits" element={<InstructorCredits />} />
-
-            {/* ✅ Profile – public & stored locally */}
-            <Route path="/profile" element={<Profile />} />
+            {/* Profile – public & stored locally */}
+            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           </Routes>
         </main>
 
-        {/* ✅ Floating chatbot always visible */}
-         {location.pathname === "/" && <FloatingChatbot />}
+        <Modal isOpen={showLoginModal} onClose={closeLoginModal}>
+          <Login onClose={closeLoginModal} />
+        </Modal>
 
         <Toaster
           position="top-right"

@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Mail, Edit2, Sun, Moon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import toast from "react-hot-toast";
+import useAuthStore from "../store/authStore";
 
 export default function Profile() {
   // ✅ Load guest profile
@@ -25,6 +27,9 @@ export default function Profile() {
     bio: initialProfile.bio,
     skills: initialProfile.skills.join(", "),
   });
+
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
 
   // ✅ Apply theme
   useEffect(() => {
@@ -190,6 +195,16 @@ export default function Profile() {
 
                 <h3 className="text-xl font-bold text-white">{profile.name}</h3>
                 <p className="text-gray-400 text-sm">{profile.email}</p>
+                <Button
+                  variant="ghost"
+                  className="mt-6 w-full border border-gray-700 dark:border-gray-700 hover:border-red-500 hover:text-red-500"
+                  onClick={() => {
+                    logout();
+                    navigate("/login");
+                  }}
+                >
+                  Log out
+                </Button>
               </CardContent>
             </Card>
           </div>

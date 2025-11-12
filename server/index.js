@@ -10,6 +10,7 @@ const chatRoutes = require("./routes/chat.js");
 const documentsRoutes = require("./routes/documents.js");
 const assessmentsRoutes = require("./routes/assessments.js");
 const liveClassesRoutes = require("./routes/liveClasses.js");
+const usersRoutes = require("./routes/users.js");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/documents", documentsRoutes);
 app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/live-classes", liveClassesRoutes);
+app.use("/api/users", usersRoutes);
 
 // ✅ Test route
 app.get("/", (req, res) => {
