@@ -15,6 +15,7 @@ pdf2image==1.17.0
 pytesseract==0.3.10
 
 # --- AI & NLP Related ---
+groq==0.33.0
 # These are placeholders for your custom model packages
 # (Make sure sarvasva_core and video_processor are importable modules)
 # If these are local folders, keep them as editable installs:

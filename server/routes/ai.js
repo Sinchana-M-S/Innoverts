@@ -13,24 +13,40 @@ const upload = multer({ storage: multer.memoryStorage() });
 // ✅ Health check for AI service
 router.get("/health", async (req, res) => {
   try {
-    const response = await axios.get(`${AI_SERVICE_URL}/`);
-    res.json({ status: "connected", aiService: "online" });
+    const response = await axios.get(`${AI_SERVICE_URL}/`, { timeout: 5000 });
+    res.json({ status: "connected", aiService: "online", aiServiceUrl: AI_SERVICE_URL });
   } catch (error) {
-    res.status(503).json({ status: "disconnected", aiService: "offline", error: error.message });
+    console.error(`AI Service Health Check Failed: ${AI_SERVICE_URL} - ${error.message}`);
+    res.status(503).json({ 
+      status: "disconnected", 
+      aiService: "offline", 
+      aiServiceUrl: AI_SERVICE_URL,
+      error: error.message,
+      hint: "Make sure Flask AI service is running on port 5001"
+    });
   }
 });
 
 // ✅ Chat endpoint - proxy to Flask /chat
 router.post("/chat", async (req, res) => {
   try {
+    console.log(`Proxying chat request to ${AI_SERVICE_URL}/chat`);
     const response = await axios.post(`${AI_SERVICE_URL}/chat`, req.body, {
       headers: { "Content-Type": "application/json" },
+      timeout: 60000, // 60 second timeout for chat
     });
     res.json(response.data);
   } catch (error) {
     console.error("AI Chat Error:", error.response?.data || error.message);
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        error: "AI service is not running. Please start the Flask AI service on port 5001.",
+        hint: "Run: cd 'ai models' && python main.py"
+      });
+    }
     res.status(error.response?.status || 500).json({
       error: error.response?.data?.error || "AI service unavailable",
+      details: error.message
     });
   }
 });
@@ -98,6 +114,21 @@ router.post("/set-language", async (req, res) => {
     console.error("Set Language Error:", error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
       error: error.response?.data?.error || "Language setting failed",
+    });
+  }
+});
+
+// ✅ Translate - proxy to Flask /translate
+router.post("/translate", async (req, res) => {
+  try {
+    const response = await axios.post(`${AI_SERVICE_URL}/translate`, req.body, {
+      headers: { "Content-Type": "application/json" },
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error("Translation Error:", error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data?.error || "Translation failed",
     });
   }
 });
@@ -194,11 +225,17 @@ router.post("/read-document", upload.single("document"), async (req, res) => {
       filename: req.file.originalname,
       contentType: req.file.mimetype,
     });
+    
+    // Add language code if provided
+    if (req.body.language_code) {
+      formData.append("language_code", req.body.language_code);
+    }
 
     const response = await axios.post(`${AI_SERVICE_URL}/read-document`, formData, {
       headers: {
         ...formData.getHeaders(),
       },
+      timeout: 120000, // 2 minutes timeout for document processing
     });
 
     res.json(response.data);
@@ -206,6 +243,7 @@ router.post("/read-document", upload.single("document"), async (req, res) => {
     console.error("Document Read Error:", error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
       error: error.response?.data?.error || "Document processing failed",
+      details: error.message
     });
   }
 });

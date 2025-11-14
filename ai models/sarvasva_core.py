@@ -9,21 +9,22 @@ import json
 from typing import Dict, Any, List, Optional
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODEL_CHAT = "llama-3.3-70b-versatile"  # For main chat conversations
 TTS_API_URL = "https://api.sarvam.ai/text-to-speech"
 TRANSLATE_API_URL = "https://api.sarvam.ai/translate"
 
 TTS_CONFIGS = {
-    'en-IN': {"model": "bulbul:v2", "speaker": "anushka", "chunk_size": 500},
-    'hi-IN': {"model": "bulbul:v2", "speaker": "abhilash", "chunk_size": 300},
-    'ta-IN': {"model": "bulbul:v2", "speaker": "vidya", "chunk_size": 300},
-    'bn-IN': {"model": "bulbul:v2", "speaker": "ishita", "chunk_size": 300},
-    'gu-IN': {"model": "bulbul:v2", "speaker": "kiran", "chunk_size": 300},
-    'kn-IN': {"model": "bulbul:v2", "speaker": "kavya", "chunk_size": 300},
-    'ml-IN': {"model": "bulbul:v2", "speaker": "arya", "chunk_size": 300},
-    'mr-IN': {"model": "bulbul:v2", "speaker": "sakshi", "chunk_size": 300},
-    'od-IN': {"model": "bulbul:v2", "speaker": "diya", "chunk_size": 300},
-    'pa-IN': {"model": "bulbul:v2", "speaker": "ranjit", "chunk_size": 300},
-    'te-IN': {"model": "bulbul:v2", "speaker": "teja", "chunk_size": 300},
+    'en-IN': {"model": "bulbul:v2", "speaker": "anushka", "chunk_size": 500, "silence_bytes": 2000},
+    'hi-IN': {"model": "bulbul:v2", "speaker": "abhilash", "chunk_size": 300, "silence_bytes": 3000},
+    'ta-IN': {"model": "bulbul:v2", "speaker": "vidya", "chunk_size": 300, "silence_bytes": 3000},
+    'bn-IN': {"model": "bulbul:v2", "speaker": "ishita", "chunk_size": 300, "silence_bytes": 3000},
+    'gu-IN': {"model": "bulbul:v2", "speaker": "kiran", "chunk_size": 300, "silence_bytes": 3000},
+    'kn-IN': {"model": "bulbul:v2", "speaker": "kavya", "chunk_size": 300, "silence_bytes": 3000},
+    'ml-IN': {"model": "bulbul:v2", "speaker": "arya", "chunk_size": 300, "silence_bytes": 3000},
+    'mr-IN': {"model": "bulbul:v2", "speaker": "sakshi", "chunk_size": 300, "silence_bytes": 3000},
+    'od-IN': {"model": "bulbul:v2", "speaker": "diya", "chunk_size": 300, "silence_bytes": 3000},
+    'pa-IN': {"model": "bulbul:v2", "speaker": "ranjit", "chunk_size": 300, "silence_bytes": 3000},
+    'te-IN': {"model": "bulbul:v2", "speaker": "teja", "chunk_size": 300, "silence_bytes": 3000},
 }
 
 # Language detection patterns (Unicode ranges and common words)
@@ -77,17 +78,28 @@ class SarvasvaChatbot:
         self.groq_client = Groq(api_key=groq_api_key)
         self.sarvam_key = sarvam_api_key
         self.model_name = GROQ_MODEL
+        self.model_name_chat = GROQ_MODEL_CHAT  # For main chat conversations
         self.language_code = language_code
         self.history: List[Dict[str, str]] = []
         self.system_prompt = self._get_system_prompt()
+        # Session tracking for SARVASVA behavior
+        self.question_count = 0
+        self.asked_questions = set()
+        self.unknown_answers = set()
+        self.assessment_provided = False
+        self.prompt_added = False
         self.reset_session()
     def _get_system_prompt(self):
-        return ("You are SARVASVA, a friendly, expert, and empathetic multilingual educational assistant. "
-                "Your goal is to answer the user's questions clearly, concisely, and accurately "
-                "in the context of skill development, science, and general education. "
-                "You support multiple languages and can communicate with users in their preferred language. "
-                "Your responses MUST be in English for internal processing (you will be translated automatically), "
-                "but avoid mentioning that you are translating. Be natural and helpful.")
+        return ("You are a friendly, professional, and highly knowledgeable education assistant and tutor. "
+                "Your goal is to help students with their educational journey, learning, and academic guidance "
+                "in an interactive and engaging manner. Start by warmly greeting the user and asking for basic "
+                "details like name, age, and current educational level, then ask about their learning needs "
+                "step by step (e.g., subjects of interest, learning style, career goals, time availability, "
+                "challenging subjects, preferred learning mode, etc.) instead of requesting everything at once. "
+                "Ask brief, clear questions to avoid overwhelming the user. Provide explanations with culturally "
+                "relevant examples from Indian context. Don't forget send only plain text no stars or any other "
+                "special characters in the text. Your responses MUST be in English for internal processing "
+                "(you will be translated automatically), but avoid mentioning that you are translating. Be natural and helpful.")
     def set_language(self, language_code: str):
         """Changes the current language code for I/O."""
         if language_code in TTS_CONFIGS:
@@ -125,7 +137,12 @@ class SarvasvaChatbot:
         return self.language_code
     def reset_session(self):
         """Clears the history to start a new conversation (persists the system prompt)."""
-        self.history = [{"role": "system", "content": self.system_prompt}]
+        self.history = []
+        self.question_count = 0
+        self.asked_questions = set()
+        self.unknown_answers = set()
+        self.assessment_provided = False
+        self.prompt_added = False
     def _chunk_text_by_sentence(self, input_text: str, max_length: int) -> List[str]:
         sentences = re.split(r'(?<=[.!?])\s+', input_text)
         chunks = []
@@ -313,16 +330,18 @@ class SarvasvaChatbot:
         except Exception as e:
             logging.error(f"Summarization failed: {e}")
             return f"Error: Failed to generate summary. Details: {e}"
-    def generate_response(self, user_message_vernacular: str, is_voice_chat: bool = False, always_tts: bool = True, auto_detect_language: bool = True) -> Dict[str, Any]:
+    def generate_response(self, user_message_vernacular: str, is_voice_chat: bool = False, always_tts: bool = True, auto_detect_language: bool = True, is_initial_greeting: bool = False) -> Dict[str, Any]:
         """
         Processes user input, generates an LLM response with history (memory), 
         and prepares the output (text and audio in the user's language).
+        Implements SARVASVA chatbot behavior with question tracking and assessment.
         
         Args:
             user_message_vernacular: User's message in their selected language
             is_voice_chat: Whether this is a voice chat session (legacy parameter)
             always_tts: If True, always generate TTS audio (default: True for multilingual support)
             auto_detect_language: If True, automatically detect and switch language from input (default: True)
+            is_initial_greeting: If True, this is an initial greeting request
         """
         # Auto-detect language from input if enabled
         if auto_detect_language:
@@ -331,23 +350,85 @@ class SarvasvaChatbot:
                 self.set_language(detected_lang)
                 logging.info(f"Auto-switched language to {detected_lang} based on input")
         
+        # Add system prompt only once per conversation
+        if not self.prompt_added:
+            self.history.append({"role": "system", "content": self.system_prompt})
+            self.prompt_added = True
+        
         current_lang = self.language_code
-        english_input = self._translate(
-            user_message_vernacular, 
-            source_lang=current_lang, 
-            target_lang="en-IN"
-        )
-        self.history.append({"role": "user", "content": english_input})
+        
+        # Handle initial greeting separately
+        if is_initial_greeting:
+            user_message_to_llm = "Start the conversation with a warm greeting and ask the first step question."
+        else:
+            # Translate user input to English for LLM processing
+            english_input = self._translate(
+                user_message_vernacular, 
+                source_lang=current_lang, 
+                target_lang="en-IN"
+            )
+            user_message_to_llm = english_input
+            self.history.append({"role": "user", "content": english_input})
+            # Increment question count for user messages
+            self.question_count += 1
+        
+        # Check if assessment should be provided (after 15 questions or when user asks for guidance)
+        lower_message = user_message_to_llm.lower()
+        if (self.question_count >= 15 or "guidance" in lower_message or "recommend" in lower_message) and not self.assessment_provided:
+            prediction_instruction = ("Based on all information gathered so far, provide a comprehensive educational guidance assessment. "
+                                    "Ensure to consider the student's educational level, subjects of interest, learning style, career goals, "
+                                    "and time availability as key factors. Provide full details on personalized learning path, recommended "
+                                    "study resources, concept explanations with Indian cultural examples, study strategies, and actionable "
+                                    "next steps for their educational journey.")
+            self.history.append({"role": "system", "content": prediction_instruction})
+            self.assessment_provided = True
+        
+        # Use chat model for main conversations
         try:
+            logging.info(f"Calling Groq API with model: {self.model_name_chat}, history length: {len(self.history)}")
             completion = self.groq_client.chat.completions.create(
-                model=self.model_name, 
-                messages=self.history 
+                model=self.model_name_chat, 
+                messages=self.history
             )
             english_output = completion.choices[0].message.content
+            if not english_output or not english_output.strip():
+                logging.warning("Groq API returned empty response")
+                english_output = "I apologize, but I didn't receive a proper response. Please try again."
         except Exception as e:
-            logging.error(f"Groq LLM generation failed: {e}")
-            english_output = "I am sorry, I ran into a system error. Please check the server connection."
+            logging.error(f"Groq LLM generation failed: {e}", exc_info=True)
+            error_msg = str(e)
+            if "401" in error_msg or "authentication" in error_msg.lower():
+                raise ValueError("Groq API authentication failed. Check GROQ_API_KEY.")
+            elif "404" in error_msg or "model" in error_msg.lower():
+                raise ValueError(f"Groq model '{self.model_name_chat}' not found or not accessible.")
+            elif "rate limit" in error_msg.lower() or "429" in error_msg:
+                raise ValueError("Groq API rate limit exceeded. Please try again later.")
+            else:
+                english_output = f"I am sorry, I ran into a system error: {error_msg}. Please check the server connection."
+        
         self.history.append({"role": "assistant", "content": english_output})
+        
+        # Check if response is too long (more than 2000 characters) and summarize if needed
+        if len(english_output) > 2000:
+            try:
+                summarize_prompt = f"""Summarize the following educational response in a concise but comprehensive way. Keep all important information but make it shorter. Maintain the same language and tone. Response to summarize:
+
+{english_output[:3000]}
+
+Provide a clear, concise summary that captures all key points:"""
+                
+                original_length = len(english_output)
+                summary_completion = self.groq_client.chat.completions.create(
+                    messages=[{"role": "user", "content": summarize_prompt}],
+                    model=self.model_name_chat
+                )
+                english_output = summary_completion.choices[0].message.content
+                # Update the last message in history with summarized version
+                self.history[-1]["content"] = english_output
+                logging.info(f"Response summarized from {original_length} to {len(english_output)} characters")
+            except Exception as e:
+                logging.error(f"Summarization failed: {str(e)}")
+                # Continue with original response if summarization fails
         vernacular_output_text = self._translate(
             english_output, 
             source_lang="en-IN", 
@@ -382,6 +463,6 @@ class SarvasvaChatbot:
             "text": vernacular_output_text,
             "audio_base64": base64_audio,
             "is_voice_mode": is_voice_chat or always_tts,
-            "language_code": current_lang,
+            "language_code": current_lang,  # Return the language used for response
             "history_length": len(self.history)
         }
