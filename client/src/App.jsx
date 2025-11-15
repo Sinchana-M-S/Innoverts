@@ -16,6 +16,7 @@ import StudentDocuments from './pages/student/StudentDocuments';
 import StudentSummarizer from './pages/student/StudentSummarizer';
 import StudentChat from './pages/student/StudentChat';
 import StudentAssessments from './pages/student/StudentAssessments';
+import ProctorAI from './pages/student/ProctorAI';
 import InstructorUpload from './pages/instructor/InstructorUpload';
 import InstructorLiveClasses from './pages/instructor/InstructorLiveClasses';
 import InstructorCredits from './pages/instructor/InstructorCredits';
@@ -150,6 +151,7 @@ function App() {
             <Route path="/student/summarizer" element={<PrivateRoute allowedRoles={['student']}><StudentSummarizer /></PrivateRoute>} />
             <Route path="/student/chat" element={<PrivateRoute allowedRoles={['student']}><StudentChat /></PrivateRoute>} />
             <Route path="/student/assessments" element={<PrivateRoute allowedRoles={['student']}><StudentAssessments /></PrivateRoute>} />
+            <Route path="/student/proctor-ai" element={<PrivateRoute allowedRoles={['student']}><ProctorAI /></PrivateRoute>} />
 
             {/* INSTRUCTOR Routes */}
             <Route path="/instructor/upload" element={<PrivateRoute allowedRoles={['instructor']}><InstructorUpload /></PrivateRoute>} />

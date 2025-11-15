@@ -20,6 +20,7 @@ const assessmentsRoutes = require("./routes/assessments.js");
 const liveClassesRoutes = require("./routes/liveClasses.js");
 const usersRoutes = require("./routes/users.js");
 const aiRoutes = require("./routes/ai.js"); // ✅ AI proxy routes
+const proctorRoutes = require("./routes/proctor.js"); // ✅ ProctorAI routes
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/assessments", assessmentsRoutes);
 app.use("/api/live-classes", liveClassesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/ai", aiRoutes); // ✅ AI routes (proxies to Flask)
+app.use("/api/proctor", proctorRoutes); // ✅ ProctorAI routes
 
 // ✅ Test route
 app.get("/", (req, res) => {
