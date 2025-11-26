@@ -1,341 +1,190 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, X, Video } from 'lucide-react';
-import api from '../../lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function InstructorUpload() {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    price: 0,
-    tags: '',
-    learningObjectives: '',
-    prerequisites: '',
-    thumbnail: '',
-  });
-
-  const [videos, setVideos] = useState([]);
+  const [title, setTitle] = useState("");
+  const [videoFile, setVideoFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [progressPct, setProgressPct] = useState(0);
+  const [result, setResult] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  // ✅ Guest identity (since there's no login)
-  const guestId = localStorage.getItem('guestId') || `g-${Math.random().toString(36).slice(2)}`;
-  const guestName = localStorage.getItem('guestName') || `Guest-${Math.floor(Math.random() * 9999)}`;
-
-  // ✅ Save guest identity in browser
-  useEffect(() => {
-    localStorage.setItem('guestId', guestId);
-    localStorage.setItem('guestName', guestName);
-  }, []);
-
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Reset form
+  const resetForm = () => {
+    setTitle("");
+    setVideoFile(null);
+    setProgressPct(0);
+    setResult(null);
   };
 
-  const addVideo = () => {
-    setVideos([
-      ...videos,
-      { title: '', videoUrl: '', duration: 0, order: videos.length }
-    ]);
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    setVideoFile(file);
   };
 
-  const updateVideo = (index, field, value) => {
-    const updated = [...videos];
-    updated[index][field] = value;
-    setVideos(updated);
-  };
-
-  const removeVideo = (index) => {
-    setVideos(videos.filter((_, i) => i !== index));
-  };
-
+  // Upload
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!videoFile) {
+      toast.error("Please select a video file.");
+      return;
+    }
+    if (!title.trim()) {
+      toast.error("Please enter a video title.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("video_file", videoFile);
+
     setLoading(true);
+    setProgressPct(0);
+
+    toast.loading("⚙ Processing video...", { id: "upload" });
 
     try {
-      const courseData = {
-        ...formData,
-        price: parseInt(formData.price),
-        tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
-        learningObjectives: formData.learningObjectives
-          .split('\n')
-          .map((o) => o.trim())
-          .filter(Boolean),
-        prerequisites: formData.prerequisites
-          .split('\n')
-          .map((p) => p.trim())
-          .filter(Boolean),
-        videos,
+      const { data } = await axios.post(
+        "http://127.0.0.1:8000/api/upload-video",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (evt) => {
+            if (evt.total) {
+              const pct = Math.round((evt.loaded / evt.total) * 100);
+              setProgressPct(pct);
+            }
+          },
+          timeout: 1000 * 60 * 10,
+        }
+      );
 
-        // ✅ No login → assign guest as instructor
-        instructorGuestId: guestId,
-        instructorGuestName: guestName,
+      setResult(data);
+      toast.success("🎉 Uploaded successfully!", { id: "upload" });
 
-        isPublished: true,
-      };
+      // Show modal popup
+      setShowModal(true);
 
-      await api.post('/courses', courseData);
-      toast.success('Course created successfully!');
-
-      // ✅ Reset form
-      setFormData({
-        title: '',
-        description: '',
-        category: '',
-        price: 0,
-        tags: '',
-        learningObjectives: '',
-        prerequisites: '',
-        thumbnail: '',
-      });
-
-      setVideos([]);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create course');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.log(err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Upload failed";
+      toast.error("❌ " + msg, { id: "upload" });
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="container mx-auto px-4 py-20">
+    <div className="min-h-screen bg-black text-white p-8">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold">🎬 Upload & Translate Video</h1>
 
-        <h1 className="mb-8 text-4xl font-bold text-white">Upload Course</h1>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-8 lg:grid-cols-3">
-
-            {/* LEFT SIDE FORM */}
-            <div className="lg:col-span-2 space-y-6">
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-
-                  {/* Title */}
-                  <div>
-                    <label className="mb-2 block text-sm text-gray-400">Course Title *</label>
-                    <input
-                      type="text"
-                      name="title"
-                      required
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="mb-2 block text-sm text-gray-400">Description *</label>
-                    <textarea
-                      name="description"
-                      required
-                      rows={6}
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-
-                    {/* Category */}
-                    <div>
-                      <label className="mb-2 block text-sm text-gray-400">Category *</label>
-                      <select
-                        name="category"
-                        required
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                      >
-                        <option value="">Select category</option>
-                        <option value="programming">Programming</option>
-                        <option value="design">Design</option>
-                        <option value="business">Business</option>
-                        <option value="science">Science</option>
-                        <option value="language">Language</option>
-                      </select>
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                      <label className="mb-2 block text-sm text-gray-400">Price (Credits) *</label>
-                      <input
-                        type="number"
-                        name="price"
-                        min="0"
-                        required
-                        value={formData.price}
-                        onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                      />
-                    </div>
-
-                  </div>
-
-                  {/* Thumbnail */}
-                  <div>
-                    <label className="mb-2 block text-sm text-gray-400">Thumbnail URL</label>
-                    <input
-                      type="url"
-                      name="thumbnail"
-                      value={formData.thumbnail}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                    />
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <label className="mb-2 block text-sm text-gray-400">Tags (comma-separated)</label>
-                    <input
-                      type="text"
-                      name="tags"
-                      value={formData.tags}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                    />
-                  </div>
-
-                </CardContent>
-              </Card>
-
-              {/* Videos Section */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Course Videos</CardTitle>
-                    <Button type="button" variant="secondary" onClick={addVideo} size="sm">
-                      <Plus size={18} className="mr-2" />
-                      Add Video
-                    </Button>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-
-                  {videos.length === 0 ? (
-                    <div className="py-8 text-center text-gray-400">
-                      <Video size={48} className="mx-auto mb-4 opacity-50" />
-                      <p>No videos added yet</p>
-                    </div>
-                  ) : (
-                    videos.map((video, index) => (
-                      <div key={index} className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-
-                        <div className="mb-4 flex items-center justify-between">
-                          <span className="font-medium text-white">Video {index + 1}</span>
-
-                          <button
-                            type="button"
-                            onClick={() => removeVideo(index)}
-                            className="rounded-lg p-2 text-red-400 hover:bg-gray-800"
-                          >
-                            <X size={18} />
-                          </button>
-                        </div>
-
-                        <div className="space-y-3">
-                          <input
-                            type="text"
-                            placeholder="Video Title"
-                            value={video.title}
-                            onChange={(e) => updateVideo(index, 'title', e.target.value)}
-                            className="w-full rounded-lg border border-gray-800 bg-gray-800 px-4 py-2 text-white"
-                          />
-                          <input
-                            type="url"
-                            placeholder="Video URL"
-                            value={video.videoUrl}
-                            onChange={(e) => updateVideo(index, 'videoUrl', e.target.value)}
-                            className="w-full rounded-lg border border-gray-800 bg-gray-800 px-4 py-2 text-white"
-                          />
-                          <input
-                            type="number"
-                            placeholder="Duration (seconds)"
-                            value={video.duration}
-                            onChange={(e) =>
-                              updateVideo(index, 'duration', parseInt(e.target.value) || 0)
-                            }
-                            className="w-full rounded-lg border border-gray-800 bg-gray-800 px-4 py-2 text-white"
-                          />
-                        </div>
-
-                      </div>
-                    ))
-                  )}
-
-                </CardContent>
-              </Card>
-
-              {/* Learning Objectives */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Learning Objectives</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <textarea
-                    name="learningObjectives"
-                    rows={4}
-                    value={formData.learningObjectives}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Prerequisites */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Prerequisites</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <textarea
-                    name="prerequisites"
-                    rows={4}
-                    value={formData.prerequisites}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white"
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Submit Button */}
-              <Button type="submit" variant="primary" className="w-full" disabled={loading}>
-                {loading ? 'Creating Course...' : 'Create Course'}
-              </Button>
-
-            </div>
-
-            {/* RIGHT SIDEBAR */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-24">
-                <CardContent className="p-6">
-                  <h3 className="mb-4 text-lg font-bold text-white">Course Creation Tips</h3>
-                  <ul className="space-y-3 text-sm text-gray-400">
-                    <li>• Provide a clear and descriptive title</li>
-                    <li>• Write a detailed description</li>
-                    <li>• Add high-quality video content</li>
-                    <li>• Set appropriate pricing</li>
-                    <li>• Include learning objectives</li>
-                    <li>• You'll earn credits when students enroll</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
+          {/* Title */}
+          <div>
+            <label className="text-sm text-gray-400">Video Title</label>
+            <input
+              className="mt-1 w-full bg-gray-900 p-3 rounded border border-gray-700"
+              placeholder="Enter video title"
+              value={title}
+              disabled={loading}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
+
+          {/* File Upload */}
+          <div>
+            <label className="text-sm text-gray-400">Upload Video File</label>
+            <input
+              type="file"
+              accept="video/*"
+              disabled={loading}
+              className="mt-1 w-full"
+              onChange={handleFileChange}
+            />
+            {videoFile && (
+              <div className="text-gray-400 text-sm mt-1">
+                Selected: {videoFile.name} (
+                {(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+              </div>
+            )}
+          </div>
+
+          {/* Upload Button */}
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-5 py-3 rounded flex items-center gap-2 ${
+                loading ? "bg-gray-700" : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {loading && (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              )}
+              {loading ? "Uploading…" : "Upload & Translate"}
+            </button>
+
+            <button
+              type="button"
+              onClick={resetForm}
+              disabled={loading}
+              className="px-5 py-3 bg-gray-800 rounded hover:bg-gray-700"
+            >
+              Reset
+            </button>
+          </div>
+
+          {/* Progress Bar */}
+          {loading && (
+            <div className="w-full bg-gray-800 rounded h-4 overflow-hidden">
+              <div
+                className="bg-green-500 h-4 transition-all duration-200"
+                style={{ width: `${progressPct}%` }}
+              ></div>
+            </div>
+          )}
         </form>
       </div>
+
+      {/* ---------- SUCCESS MODAL ---------- */}
+      {showModal && result && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-8 rounded-2xl w-[380px] text-center space-y-4 border border-gray-700">
+            <h2 className="text-xl font-bold text-green-400">
+              ✅ Upload Successful!
+            </h2>
+
+            <p className="text-gray-300 text-sm">
+              Your video has been processed in all 4 languages.
+            </p>
+
+            <div className="text-left text-gray-300 text-sm space-y-2">
+              <p>📁 Output Files:</p>
+              <ul className="list-disc ml-5">
+                <li>English (EN)</li>
+                <li>Hindi (HI)</li>
+                <li>Telugu (TE)</li>
+                <li>Kannada (KN)</li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => setShowModal(false)}
+              className="w-full bg-blue-600 py-2 rounded hover:bg-blue-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

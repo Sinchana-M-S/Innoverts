@@ -62,13 +62,14 @@ export default function CoursePlayer() {
   const [showBoardText, setShowBoardText] = useState(true);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
-  // ✅ FETCH COURSE (JSON BACKEND)
+  // FETCH COURSE
   useEffect(() => {
     const load = async () => {
       setLoadingCourse(true);
       try {
         const { data } = await api.get(`/api/courses/${courseId}`);
         const normalized = normalizeCourse(data);
+
         if (normalized) {
           setCourse(normalized);
           return;
@@ -80,12 +81,13 @@ export default function CoursePlayer() {
         setLoadingCourse(false);
       }
     };
+
     setCourse(fallbackCourse);
     setCurrentVideoIndex(0);
     load();
   }, [courseId, fallbackCourse]);
 
-  // ✅ Update subtitles + board text dynamically
+  // Update subtitles + board content
   useEffect(() => {
     if (course?.videos?.[currentVideoIndex]) {
       updateSubtitles();
@@ -93,7 +95,7 @@ export default function CoursePlayer() {
     }
   }, [currentVideoIndex, subtitleLanguage, boardLanguage, course, played]);
 
-  // ✅ JSON-safe subtitle handling
+  // SUBTITLES
   const updateSubtitles = () => {
     const video = course?.videos?.[currentVideoIndex];
     if (!video) return;
@@ -108,7 +110,7 @@ export default function CoursePlayer() {
     setSubtitleText(text);
   };
 
-  // ✅ JSON-safe board text handling
+  // BOARD TEXT
   const updateBoardText = () => {
     const video = course?.videos?.[currentVideoIndex];
     if (!video) return;
@@ -117,10 +119,10 @@ export default function CoursePlayer() {
 
     if (video.boardTextData?.length > 0) {
       const matches = video.boardTextData.filter(
-        item => Math.abs((item.timestamp || 0) - currentTime) < 5
+        (item) => Math.abs((item.timestamp || 0) - currentTime) < 5
       );
 
-      const translated = matches.map(item => ({
+      const translated = matches.map((item) => ({
         ...item,
         translated:
           item.translatedText?.[boardLanguage] ||
@@ -134,40 +136,39 @@ export default function CoursePlayer() {
     }
   };
 
-  // ✅ Track progress
-  const handleProgress = state => {
+  // VIDEO PROGRESS
+  const handleProgress = (state) => {
     setPlayed(state.played);
-    updateBoardText();
   };
 
-  // ✅ JSON Backend course completion
+  // COMPLETE COURSE
   const handleCompleteCourse = async () => {
     try {
-      const guestId = localStorage.getItem('guestId');
-      if (!guestId) {
+      if (!localStorage.getItem('guestId')) {
         localStorage.setItem(
           'guestId',
           `g-${Math.random().toString(36).substring(2, 10)}`
         );
       }
+
       const activeGuestId = localStorage.getItem('guestId');
 
-      await api.post(`/api/users/${activeGuestId}/complete-course`, { courseId });
+      await api.post(`/api/users/${activeGuestId}/complete-course`, {
+        courseId,
+      });
 
-      toast.success("✅ Course Completed! 50 credits added.");
-      navigate("/student/completed");
+      toast.success('✅ Course Completed! 50 credits added.');
+      navigate('/student/completed');
     } catch (error) {
-      toast.success("✅ Course Completed! (Demo)");
-      navigate("/student/completed");
+      toast.success('✅ Course Completed! (Demo)');
+      navigate('/student/completed');
     }
   };
 
+  // BACK HANDLER
   const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate(`/course/${courseId}`);
-    }
+    if (window.history.length > 1) navigate(-1);
+    else navigate(`/course/${courseId}`);
   };
 
   if (!course) {
@@ -213,6 +214,7 @@ export default function CoursePlayer() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="container mx-auto px-4 py-20 space-y-8">
+        {/* HEADER */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <button
@@ -222,49 +224,50 @@ export default function CoursePlayer() {
               <ArrowLeft size={16} />
               <span>Back</span>
             </button>
+
             <h1 className="mt-2 text-3xl font-bold text-black dark:text-white">
               {course.title}
             </h1>
+
             <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">
               {course.description}
             </p>
           </div>
 
+          {/* STATS */}
           <div className="flex flex-wrap items-center gap-3">
             <Card className="border-none bg-gray-100 dark:bg-gray-900">
               <CardContent className="flex items-center space-x-3 px-4 py-3">
                 <Video size={18} className="text-blue-500" />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
                     Lessons
                   </p>
-                  <p className="text-sm font-semibold text-black dark:text-white">
-                    {totalVideos}
-                  </p>
+                  <p className="text-sm font-semibold">{totalVideos}</p>
                 </div>
               </CardContent>
             </Card>
+
             <Card className="border-none bg-gray-100 dark:bg-gray-900">
               <CardContent className="flex items-center space-x-3 px-4 py-3">
                 <Clock size={18} className="text-purple-500" />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
                     Total Time
                   </p>
-                  <p className="text-sm font-semibold text-black dark:text-white">
-                    {totalMinutes} min
-                  </p>
+                  <p className="text-sm font-semibold">{totalMinutes} min</p>
                 </div>
               </CardContent>
             </Card>
+
             <Card className="border-none bg-gray-100 dark:bg-gray-900">
               <CardContent className="flex items-center space-x-3 px-4 py-3">
                 <Award size={18} className="text-amber-500" />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
                     Current Progress
                   </p>
-                  <p className="text-sm font-semibold text-black dark:text-white">
+                  <p className="text-sm font-semibold">
                     {Math.round(progressPercent)}%
                   </p>
                 </div>
@@ -273,7 +276,9 @@ export default function CoursePlayer() {
           </div>
         </div>
 
+        {/* MAIN GRID */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)]">
+          {/* VIDEO PLAYER */}
           <div className="space-y-8">
             <Card className="overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
               <div className="relative bg-black" style={{ paddingTop: '56.25%' }}>
@@ -296,7 +301,7 @@ export default function CoursePlayer() {
                   className="absolute top-0 left-0"
                 />
 
-                {/* Subtitles */}
+                {/* SUBTITLES */}
                 {showSubtitles && subtitleText && (
                   <div className="absolute bottom-24 w-full text-center px-4">
                     <p className="inline-block rounded-lg bg-black/80 px-4 py-2 text-lg text-white">
@@ -305,7 +310,7 @@ export default function CoursePlayer() {
                   </div>
                 )}
 
-                {/* Board text */}
+                {/* BOARD TEXT */}
                 {showBoardText && boardText.length > 0 && (
                   <div className="absolute top-4 right-4 max-w-xs rounded-lg bg-black/80 p-3">
                     {boardText.map((item, i) => (
@@ -317,33 +322,34 @@ export default function CoursePlayer() {
                 )}
               </div>
 
-              <div className="border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+              {/* CONTROLS */}
+              <div className="border-t border-gray-200 bg-gray-50 p-4 dark:bg-gray-900">
                 <div className="flex flex-wrap items-center gap-3">
+                  {/* PLAY/PAUSE */}
                   <button
                     onClick={() => setPlaying(!playing)}
-                    className="inline-flex items-center justify-center rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                    className="inline-flex items-center justify-center rounded-full bg-black px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-black"
                   >
                     {playing ? (
                       <>
-                        <Pause size={16} className="mr-2" />
-                        Pause
+                        <Pause size={16} className="mr-2" /> Pause
                       </>
                     ) : (
                       <>
-                        <Play size={16} className="mr-2" />
-                        Play
+                        <Play size={16} className="mr-2" /> Play
                       </>
                     )}
                   </button>
 
+                  {/* VOLUME */}
                   <div className="flex items-center space-x-2 rounded-full bg-white px-3 py-1 text-sm shadow dark:bg-gray-800">
                     <button
                       onClick={() => setMuted(!muted)}
                       className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      aria-label="Toggle mute"
                     >
                       {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                     </button>
+
                     <input
                       type="range"
                       min="0"
@@ -351,57 +357,54 @@ export default function CoursePlayer() {
                       step="0.01"
                       value={volume}
                       onChange={(e) => setVolume(parseFloat(e.target.value))}
-                      className="h-1 w-24 accent-blue-500"
                     />
                   </div>
 
+                  {/* LANGUAGE MENU */}
                   <button
                     onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                    className="inline-flex items-center space-x-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    className="inline-flex items-center space-x-2 rounded-full bg-white px-4 py-2 text-sm font-semibold shadow dark:bg-gray-800"
                   >
                     <Languages size={16} />
                     <span>Languages</span>
                     <ChevronDown size={14} />
                   </button>
 
+                  {/* NEXT/PREV */}
                   <div className="ml-auto flex items-center gap-2">
                     <button
                       disabled={currentVideoIndex === 0}
                       onClick={() => {
-                        if (currentVideoIndex > 0) {
-                          setCurrentVideoIndex(currentVideoIndex - 1);
-                          setPlaying(true);
-                        }
+                        setCurrentVideoIndex(currentVideoIndex - 1);
+                        setPlaying(true);
                       }}
-                      className="inline-flex items-center space-x-2 rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                      className="inline-flex items-center space-x-2 rounded-full border px-4 py-2 text-sm text-gray-600 dark:text-gray-300"
                     >
                       <SkipBack size={16} />
-                      <span>Prev</span>
+                      Prev
                     </button>
+
                     <button
                       disabled={currentVideoIndex === totalVideos - 1}
                       onClick={() => {
-                        if (currentVideoIndex < totalVideos - 1) {
-                          setCurrentVideoIndex(currentVideoIndex + 1);
-                          setPlaying(true);
-                        }
+                        setCurrentVideoIndex(currentVideoIndex + 1);
+                        setPlaying(true);
                       }}
-                      className="inline-flex items-center space-x-2 rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                      className="inline-flex items-center space-x-2 rounded-full border px-4 py-2 text-sm text-gray-600 dark:text-gray-300"
                     >
-                      <span>Next</span>
+                      Next
                       <SkipForward size={16} />
                     </button>
                   </div>
                 </div>
 
+                {/* LANGUAGE PANEL */}
                 {showLanguageMenu && (
-                  <div className="mt-4 grid gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-800 dark:bg-gray-950">
+                  <div className="mt-4 grid gap-4 rounded-2xl border p-4 dark:border-gray-800">
                     <div>
-                      <label className="text-xs uppercase text-gray-500 dark:text-gray-400">
-                        Subtitles
-                      </label>
+                      <label className="text-xs text-gray-500">Subtitles</label>
                       <select
-                        className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900"
+                        className="mt-1 w-full rounded-lg border px-3 py-2"
                         value={subtitleLanguage}
                         onChange={(e) => setSubtitleLanguage(e.target.value)}
                       >
@@ -414,11 +417,11 @@ export default function CoursePlayer() {
                     </div>
 
                     <div>
-                      <label className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                      <label className="text-xs text-gray-500">
                         Board Language
                       </label>
                       <select
-                        className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900"
+                        className="mt-1 w-full rounded-lg border px-3 py-2"
                         value={boardLanguage}
                         onChange={(e) => setBoardLanguage(e.target.value)}
                       >
@@ -431,7 +434,7 @@ export default function CoursePlayer() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <label className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
+                      <label className="flex items-center space-x-2 text-sm">
                         <input
                           type="checkbox"
                           checked={showSubtitles}
@@ -439,7 +442,8 @@ export default function CoursePlayer() {
                         />
                         <span>Show subtitles</span>
                       </label>
-                      <label className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
+
+                      <label className="flex items-center space-x-2 text-sm">
                         <input
                           type="checkbox"
                           checked={showBoardText}
@@ -451,6 +455,7 @@ export default function CoursePlayer() {
                   </div>
                 )}
 
+                {/* SEEK BAR */}
                 <div className="mt-4">
                   <input
                     type="range"
@@ -461,7 +466,8 @@ export default function CoursePlayer() {
                     onChange={(e) => setPlayed(parseFloat(e.target.value))}
                     className="w-full accent-blue-500"
                   />
-                  <div className="mt-2 flex justify-between text-xs text-gray-600 dark:text-gray-300">
+
+                  <div className="mt-2 flex justify-between text-xs text-gray-600">
                     <span>{formatTime(played * (video.duration || 0))}</span>
                     <span>{formatTime(video.duration || 0)}</span>
                   </div>
@@ -469,49 +475,46 @@ export default function CoursePlayer() {
               </div>
             </Card>
 
+            {/* HIGHLIGHTS + TIPS */}
             <div className="grid gap-6 md:grid-cols-2">
-              <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+              <Card>
                 <CardContent className="space-y-3 p-5">
-                  <h3 className="text-base font-semibold text-black dark:text-white">
-                    Lesson Highlights
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Keep an eye on the board notes on the top-right of the
-                    player. They update in real time with the instructor’s key
-                    points in your preferred language.
+                  <h3 className="font-semibold">Lesson Highlights</h3>
+                  <p className="text-sm text-gray-600">
+                    Watch the board notes on the top-right. They update based on
+                    timestamp and language.
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+              <Card>
                 <CardContent className="space-y-3 p-5">
-                  <h3 className="text-base font-semibold text-black dark:text-white">
-                    Tips
-                  </h3>
-                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <li>• Press space to pause or resume the lesson quickly.</li>
-                    <li>• Use the Next button to skip straight to upcoming content.</li>
-                    <li>• Switch subtitles and board language for bilingual learning.</li>
+                  <h3 className="font-semibold">Tips</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li>• Press Space to pause/resume.</li>
+                    <li>• Use Next to skip topics.</li>
+                    <li>• Switch languages anytime.</li>
                   </ul>
                 </CardContent>
               </Card>
             </div>
           </div>
 
+          {/* SIDEBAR */}
           <aside className="space-y-6">
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+            {/* COURSE OUTLINE */}
+            <Card>
               <CardContent className="space-y-4 p-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-black dark:text-white">
-                    Course Outline
-                  </h3>
-                  <span className="text-xs uppercase tracking-wide text-gray-400">
+                <div className="flex justify-between">
+                  <h3 className="font-semibold">Course Outline</h3>
+                  <span className="text-xs text-gray-400">
                     {Math.round(progressPercent)}% complete
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-800">
+
+                <div className="h-2 w-full rounded-full bg-gray-200">
                   <div
-                    className="h-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"
+                    className="h-2 rounded-full bg-blue-500"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -519,20 +522,21 @@ export default function CoursePlayer() {
                 <div className="space-y-2">
                   {course.videos?.map((lesson, index) => {
                     const isActive = index === currentVideoIndex;
+
                     return (
                       <button
-                        key={lesson.id || index}
+                        key={index}
                         onClick={() => {
                           setCurrentVideoIndex(index);
                           setPlaying(true);
                         }}
                         className={`w-full rounded-xl border px-4 py-3 text-left transition ${
                           isActive
-                            ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
-                            : 'border-gray-200 hover:border-blue-300 dark:border-gray-800 dark:hover:border-blue-500'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 hover:border-blue-300'
                         }`}
                       >
-                        <div className="flex items-center justify-between text-sm font-semibold text-black dark:text-white">
+                        <div className="flex items-center justify-between text-sm font-semibold">
                           <span className="flex items-center space-x-2">
                             <ListChecks
                               size={16}
@@ -540,16 +544,11 @@ export default function CoursePlayer() {
                             />
                             <span className="line-clamp-1">{lesson.title}</span>
                           </span>
+
                           <span className="text-xs text-gray-400">
                             {formatTime(lesson.duration)}
                           </span>
                         </div>
-
-                        {lesson.subtitle && (
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            {lesson.subtitle}
-                          </p>
-                        )}
                       </button>
                     );
                   })}
@@ -557,26 +556,20 @@ export default function CoursePlayer() {
               </CardContent>
             </Card>
 
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+            {/* NEXT STEPS */}
+            <Card>
               <CardContent className="space-y-4 p-6">
-                <h3 className="text-lg font-semibold text-black dark:text-white">
-                  Next Steps
-                </h3>
-                <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-                  <p className="flex items-start space-x-2">
-                    <BookOpen size={16} className="mt-[2px] text-blue-500" />
-                    <span>
-                      Visit the Summarizer after this lesson to generate instant
-                      notes and flashcards.
-                    </span>
-                  </p>
-                  <p className="flex items-start space-x-2">
-                    <MessageSquare size={16} className="mt-[2px] text-purple-500" />
-                    <span>
-                      Discuss tricky topics with peers inside the student chat room.
-                    </span>
-                  </p>
-                </div>
+                <h3 className="text-lg font-semibold">Next Steps</h3>
+
+                <p className="flex space-x-2 text-sm">
+                  <BookOpen size={16} className="mt-0.5 text-blue-500" />
+                  <span>Visit the Summarizer to generate your notes.</span>
+                </p>
+
+                <p className="flex space-x-2 text-sm">
+                  <MessageSquare size={16} className="mt-0.5 text-purple-500" />
+                  <span>Discuss topics with peers in the chat room.</span>
+                </p>
               </CardContent>
             </Card>
           </aside>

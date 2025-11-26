@@ -114,41 +114,36 @@ export default function Ai() {
     setInput("");
 
     try {
-      // Backend will auto-detect language from text input
       const res = await api.post("/api/ai/chat", {
         message: input,
         session_id: chat.id,
-        // language_code will be auto-detected by backend from the input text
       });
-
-      // Validate response data
-      if (!res.data || !res.data.response) {
-        throw new Error("Invalid response from server");
-      }
 
       setMessages((prev) => {
         const newMessages = [
           ...prev,
           { 
             from: "bot", 
-            text: res.data.response || "No response received",
-            audio: res.data.audio_response || null, // Store audio for playback (can be null)
-            language: res.data.language_code || "en-IN"
+            text: res.data.response,
+            audio: res.data.audio_response, // Store audio for playback
+            language: res.data.language_code
           },
         ];
         
-        // Don't auto-play - let user click play button (browser requires user interaction)
+        // ✅ Automatically play TTS audio if available (use the new message's index)
+        if (res.data.audio_response) {
+          setTimeout(() => {
+            playAudio(res.data.audio_response, newMessages.length - 1);
+          }, 100);
+        }
+        
         return newMessages;
       });
     } catch (err) {
       console.error("AI Chat Error:", err);
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error";
       setMessages((prev) => [
         ...prev,
-        { 
-          from: "bot", 
-          text: `⚠️ Error: ${errorMessage}. Please check if AI service is running and API keys are configured.` 
-        },
+        { from: "bot", text: "⚠️ AI Server Error. Please check if AI service is running." },
       ]);
     }
   };
@@ -239,105 +234,61 @@ export default function Ai() {
             language_code: detectedLanguage, // Pass detected language to ensure response matches
           });
 
-          // Validate response data
-          if (!res.data || !res.data.response) {
-            throw new Error("Invalid response from server");
-          }
-
           setMessages((prev) => {
             const newMessages = [
               ...prev,
               { 
                 from: "bot", 
-                text: res.data.response || "No response received",
-                audio: res.data.audio_response || null, // Can be null if TTS failed
-                language: res.data.language_code || detectedLanguage || "en-IN" // Ensure language is set
+                text: res.data.response,
+                audio: res.data.audio_response,
+                language: res.data.language_code || detectedLanguage // Ensure language is set
               },
             ];
             
-            // Don't auto-play - let user click play button (browser requires user interaction)
+            // Automatically play TTS audio if available (use the new message's index)
+            if (res.data.audio_response) {
+              setTimeout(() => {
+                playAudio(res.data.audio_response, newMessages.length - 1);
+              }, 100);
+            }
+            
             return newMessages;
           });
         } catch (err) {
           console.error("AI Chat Error:", err);
-          const errorMessage = err.response?.data?.error || err.message || "Unknown error";
           setMessages((prev) => [
             ...prev,
-            { 
-              from: "bot", 
-              text: `⚠️ Error: ${errorMessage}. Please check if AI service is running and API keys are configured.` 
-            },
+            { from: "bot", text: "⚠️ AI Server Error. Please check if AI service is running." },
           ]);
         }
       }
     } catch (err) {
       console.error("Voice error:", err);
-      const errorMessage = err.response?.data?.error || err.message || "Voice recognition failed";
       setMessages((prev) => [
         ...prev,
-        { 
-          from: "bot", 
-          text: `⚠️ Voice Error: ${errorMessage}. Please try typing instead or check your microphone permissions.` 
-        },
+        { from: "bot", text: "⚠️ Voice recognition failed. Please try typing instead." },
       ]);
     }
   };
 
   // ✅ Stop all playing audio and reset to start
-  const stopAllAudio = async () => {
+  const stopAllAudio = () => {
     Object.keys(audioInstancesRef.current).forEach((messageIndex) => {
       const audioData = audioInstancesRef.current[messageIndex];
-      if (audioData && audioData.audio && !audioData.audio.paused) {
-        try {
-          // Only pause if actually playing
-          audioData.audio.pause();
-          audioData.audio.currentTime = 0;
-        } catch (err) {
-          // Silently handle errors when stopping audio
-          console.debug("Error stopping audio:", err);
-        }
+      if (audioData && audioData.audio) {
+        // Reset to start regardless of playing state
+        audioData.audio.pause();
+        audioData.audio.currentTime = 0;
       }
     });
     setPlayingMessageIndex(null);
-    // Wait a bit to ensure pause operations complete
-    await new Promise(resolve => setTimeout(resolve, 50));
   };
 
-  // ✅ Cleanup audio instances on unmount
-  useEffect(() => {
-    return () => {
-      // Cleanup all audio instances when component unmounts
-      Object.keys(audioInstancesRef.current).forEach((messageIndex) => {
-        const audioData = audioInstancesRef.current[messageIndex];
-        if (audioData) {
-          try {
-            if (audioData.audio) {
-              audioData.audio.pause();
-              audioData.audio.src = '';
-            }
-            if (audioData.url) {
-              URL.revokeObjectURL(audioData.url);
-            }
-          } catch (err) {
-            console.debug("Error cleaning up audio:", err);
-          }
-        }
-      });
-      audioInstancesRef.current = {};
-    };
-  }, []);
-
   // ✅ Play audio from base64 string for a specific message
-  const playAudio = async (base64Audio, messageIndex) => {
+  const playAudio = (base64Audio, messageIndex) => {
     try {
-      // Validate base64 audio string
-      if (!base64Audio || typeof base64Audio !== 'string' || base64Audio.trim() === '') {
-        console.error("Invalid audio data: empty or null base64 string");
-        return;
-      }
-
       // Stop any currently playing audio from other messages and reset them to start
-      await stopAllAudio();
+      stopAllAudio();
       
       // Check if this message already has an audio instance
       let audioData = audioInstancesRef.current[messageIndex];
@@ -345,99 +296,66 @@ export default function Ai() {
       if (audioData && audioData.audio) {
         // Always reset to start and play from beginning
         audioData.audio.currentTime = 0;
-        try {
-          await audioData.audio.play();
-          setPlayingMessageIndex(messageIndex);
-        } catch (playErr) {
-          // Silently handle play errors (user interaction required, etc.)
-          if (playErr.name !== 'AbortError') {
-            console.error("Error playing audio:", playErr);
-          }
-          setPlayingMessageIndex(null);
-        }
+        audioData.audio.play();
+        setPlayingMessageIndex(messageIndex);
         return;
       }
       
       // Create new audio instance for this message
-      try {
-        // Decode base64 to binary
-        const binaryString = atob(base64Audio);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        
-        // Validate decoded data
-        if (bytes.length === 0) {
-          console.error("Decoded audio data is empty");
-          return;
-        }
-        
-        // Create blob and play - try multiple audio formats
-        const audioBlob = new Blob([bytes], { type: 'audio/mpeg' }); // Changed from webm to mpeg
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        
-        // Set slower playback speed (0.85 = 85% speed, making it slower)
-        audio.playbackRate = 0.85;
-        
-        // Store audio instance for this message
-        audioInstancesRef.current[messageIndex] = {
-          audio: audio,
-          url: audioUrl
-        };
-        
-        // Reset to start
-        audio.currentTime = 0;
-        
-        // Wait a bit before playing to ensure previous pauses are complete
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        try {
-          await audio.play();
-          setPlayingMessageIndex(messageIndex);
-        } catch (playErr) {
-          // Silently handle play errors (user interaction required, AbortError, etc.)
-          if (playErr.name !== 'AbortError') {
-            console.error("Error playing audio:", playErr);
-          }
-          setPlayingMessageIndex(null);
-          // Clean up on play error
-          if (audioInstancesRef.current[messageIndex]) {
-            URL.revokeObjectURL(audioUrl);
-            delete audioInstancesRef.current[messageIndex];
-          }
-        }
-        
-        // Clean up URL after playback
-        audio.onended = () => {
-          if (audioInstancesRef.current[messageIndex]) {
-            URL.revokeObjectURL(audioUrl);
-            delete audioInstancesRef.current[messageIndex];
-          }
-          setPlayingMessageIndex(null);
-        };
-        
-        // Handle errors
-        audio.onerror = (e) => {
-          console.error("Audio playback error:", e);
-          if (audioInstancesRef.current[messageIndex]) {
-            URL.revokeObjectURL(audioUrl);
-            delete audioInstancesRef.current[messageIndex];
-          }
-          setPlayingMessageIndex(null);
-        };
-      } catch (decodeErr) {
-        console.error("Error decoding base64 audio:", decodeErr);
-        setPlayingMessageIndex(null);
+      // Decode base64 to binary
+      const binaryString = atob(base64Audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
       }
-    } catch (err) {
-      console.error("Error in playAudio:", err);
-      if (audioInstancesRef.current[messageIndex]) {
-        const audioData = audioInstancesRef.current[messageIndex];
-        if (audioData && audioData.url) {
-          URL.revokeObjectURL(audioData.url);
+      
+      // Create blob and play
+      const audioBlob = new Blob([bytes], { type: 'audio/webm' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      // Set slower playback speed (0.85 = 85% speed, making it slower)
+      audio.playbackRate = 0.85;
+      
+      // Store audio instance for this message
+      audioInstancesRef.current[messageIndex] = {
+        audio: audio,
+        url: audioUrl
+      };
+      
+      // Reset to start
+      audio.currentTime = 0;
+      
+      audio.play().then(() => {
+        setPlayingMessageIndex(messageIndex);
+      }).catch((err) => {
+        console.error("Error playing audio:", err);
+        setPlayingMessageIndex(null);
+        // Some browsers require user interaction first
+        console.log("Audio playback requires user interaction. Click the play button to hear the response.");
+      });
+      
+      // Clean up URL after playback
+      audio.onended = () => {
+        if (audioInstancesRef.current[messageIndex]) {
+          URL.revokeObjectURL(audioUrl);
+          delete audioInstancesRef.current[messageIndex];
         }
+        setPlayingMessageIndex(null);
+      };
+      
+      // Handle errors
+      audio.onerror = () => {
+        if (audioInstancesRef.current[messageIndex]) {
+          URL.revokeObjectURL(audioUrl);
+          delete audioInstancesRef.current[messageIndex];
+        }
+        setPlayingMessageIndex(null);
+        console.error("Error playing audio");
+      };
+    } catch (err) {
+      console.error("Error decoding/playing audio:", err);
+      if (audioInstancesRef.current[messageIndex]) {
         delete audioInstancesRef.current[messageIndex];
       }
       setPlayingMessageIndex(null);
@@ -549,7 +467,7 @@ export default function Ai() {
               }`}
             >
               <div className="flex-1">{msg.text}</div>
-              {msg.from === "bot" && msg.audio && msg.audio.trim() !== '' && (
+              {msg.from === "bot" && msg.audio && (
                 <div className="flex items-center gap-1">
                   {playingMessageIndex === i ? (
                     <button

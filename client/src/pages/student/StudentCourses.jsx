@@ -34,7 +34,7 @@ export default function StudentCourses() {
 
   const fetchEnrolledCourses = async () => {
     try {
-      // ✅ GET enrolled course IDs from JSON backend
+      // ✅ GET enrolled course IDs from backend
       const { data } = await api.get(`/api/students/${guestId}/enrolled`);
 
       if (!data || data.length === 0) {
@@ -42,7 +42,7 @@ export default function StudentCourses() {
         return;
       }
 
-      // Fetch all course details
+      // Fetch details for each course
       const courseData = await Promise.all(
         data.map((courseId) =>
           api
@@ -61,7 +61,7 @@ export default function StudentCourses() {
       setCourses(courseData.filter(Boolean));
     } catch (error) {
       console.error("Failed to load user courses:", error);
-      setCourses(dummyCourses.slice(0, 3).map(normalizeCourse)); // fallback demo
+      setCourses(dummyCourses.slice(0, 3).map(normalizeCourse)); // fallback
     } finally {
       setLoading(false);
     }
@@ -232,7 +232,7 @@ export default function StudentCourses() {
                   0
                 ) / 60
               );
-              const progress = course.progress ?? (index + 1) * 12 % 90;
+              const progress = course.progress ?? ((index + 1) * 12) % 90;
 
               return (
                 <motion.div

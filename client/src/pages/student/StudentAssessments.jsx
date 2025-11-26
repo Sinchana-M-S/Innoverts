@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ClipboardList, Clock, CheckCircle } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle, Video } from "lucide-react";
 import api from "../../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import { formatDate } from "../../lib/utils";
@@ -17,7 +22,8 @@ export default function StudentAssessments() {
 
   // ✅ Guest identity since no login system
   const guestId =
-    localStorage.getItem("guestId") || `g-${Math.random().toString(36).slice(2)}`;
+    localStorage.getItem("guestId") ||
+    `g-${Math.random().toString(36).slice(2)}`;
   const guestName =
     localStorage.getItem("guestName") ||
     `Guest-${Math.floor(Math.random() * 9000 + 1000)}`;
@@ -72,9 +78,22 @@ export default function StudentAssessments() {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="container mx-auto px-4 py-20">
-        <h1 className="mb-8 text-4xl font-bold text-black dark:text-white">
-          AI Assessments
-        </h1>
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-4xl font-bold text-black dark:text-white">
+            AI Assessments
+          </h1>
+          <Button
+            variant="primary"
+            onClick={() => {
+              // Open ProctorAI Django app in new tab
+              window.open("http://localhost:8000/", "_blank");
+            }}
+            className="flex items-center space-x-2"
+          >
+            <Video size={20} />
+            <span>Click on Proctored Assessment</span>
+          </Button>
+        </div>
 
         {loading ? (
           <div className="space-y-4">
@@ -281,8 +300,12 @@ export default function StudentAssessments() {
                 Cancel
               </Button>
 
-              <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
-                {submitting ? "Submitting..." : "Submit"}
+              <Button
+                variant="primary"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Assessment"}
               </Button>
             </div>
           </div>

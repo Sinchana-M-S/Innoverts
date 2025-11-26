@@ -223,5 +223,165 @@
     "tags": ["spanish", "language", "beginner"],
     "isPublished": true,
     "createdAt": "2024-03-01T00:00:00.000Z"
+  },
+   {
+    "_id": "6",
+    "title": "Cybersecurity Essentials",
+    "description": "Understand cyber threats, ethical hacking, network security, and best practices to protect digital assets.",
+    "instructorName": "Ethan Brown",
+    "instructorId": "instructor6",
+    "thumbnail": "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800",
+    "price": 220,
+    "category": "security",
+    "averageRating": 4.8,
+    "totalRatings": 740,
+    "enrolledStudents": ["student2"],
+    "videos": [
+      {
+        "title": "Introduction to Cybersecurity",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        "duration": 1500,
+        "order": 0,
+        "subtitles": { "en": "Cybersecurity is crucial in the modern digital world..." },
+        "boardTextData": []
+      }
+    ],
+    "learningObjectives": [
+      "Identify common cyber threats",
+      "Understand encryption and firewalls",
+      "Apply ethical hacking principles"
+    ],
+    "prerequisites": ["Basic IT knowledge"],
+    "tags": ["security", "hacking", "network"],
+    "isPublished": true,
+    "createdAt": "2024-03-10T00:00:00.000Z"
+  },
+  {
+    "_id": "7",
+    "title": "Artificial Intelligence Fundamentals",
+    "description": "Learn the foundations of AI, neural networks, and how machines learn from data.",
+    "instructorName": "Dr. Alan Turing",
+    "instructorId": "instructor7",
+    "thumbnail": "https://images.unsplash.com/photo-1605902711622-cfb43c4437b0?w=800",
+    "price": 300,
+    "category": "ai",
+    "averageRating": 4.9,
+    "totalRatings": 980,
+    "enrolledStudents": ["student3", "student4"],
+    "videos": [
+      {
+        "title": "AI Overview",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+        "duration": 1800,
+        "order": 0,
+        "subtitles": { "en": "AI is transforming industries worldwide..." },
+        "boardTextData": []
+      }
+    ],
+    "learningObjectives": [
+      "Understand core AI concepts",
+      "Build simple neural networks",
+      "Explore real-world AI applications"
+    ],
+    "prerequisites": ["Basic programming", "Math fundamentals"],
+    "tags": ["ai", "machine learning", "neural networks"],
+    "isPublished": true,
+    "createdAt": "2024-04-01T00:00:00.000Z"
+  },
+  {
+    "_id": "8",
+    "title": "Mobile App Development with Flutter",
+    "description": "Build beautiful cross-platform mobile apps using Flutter and Dart.",
+    "instructorName": "Priya Ramesh",
+    "instructorId": "instructor8",
+    "thumbnail": "https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=800",
+    "price": 230,
+    "category": "programming",
+    "averageRating": 4.7,
+    "totalRatings": 860,
+    "enrolledStudents": ["student2"],
+    "videos": [
+      {
+        "title": "Getting Started with Flutter",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+        "duration": 1500,
+        "order": 0,
+        "subtitles": { "en": "Flutter is Google's UI toolkit for building natively compiled apps..." },
+        "boardTextData": []
+      }
+    ],
+    "learningObjectives": [
+      "Install and configure Flutter",
+      "Build cross-platform apps",
+      "Deploy mobile apps efficiently"
+    ],
+    "prerequisites": ["Basic programming experience"],
+    "tags": ["flutter", "mobile development", "dart"],
+    "isPublished": true,
+    "createdAt": "2024-04-10T00:00:00.000Z"
+  },
+  {
+    "_id": "9",
+    "title": "Photography Masterclass",
+    "description": "Learn composition, lighting, editing, and storytelling through photography.",
+    "instructorName": "Olivia Parker",
+    "instructorId": "instructor9",
+    "thumbnail": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800",
+    "price": 160,
+    "category": "art",
+    "averageRating": 4.6,
+    "totalRatings": 520,
+    "enrolledStudents": [],
+    "videos": [
+      {
+        "title": "Photography Basics",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+        "duration": 1200,
+        "order": 0,
+        "subtitles": { "en": "Learn how cameras work and how to compose great shots..." },
+        "boardTextData": []
+      }
+    ],
+    "learningObjectives": [
+      "Understand camera settings",
+      "Master photo composition",
+      "Edit photos professionally"
+    ],
+    "prerequisites": ["A camera or smartphone"],
+    "tags": ["photography", "art", "editing"],
+    "isPublished": true,
+    "createdAt": "2024-04-20T00:00:00.000Z"
+  },
+  {
+    "_id": "10",
+    "title": "Digital Marketing 101",
+    "description": "Learn SEO, social media marketing, and analytics to grow online presence effectively.",
+    "instructorName": "David Patel",
+    "instructorId": "instructor10",
+    "thumbnail": "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800",
+    "price": 190,
+    "category": "marketing",
+    "averageRating": 4.8,
+    "totalRatings": 720,
+    "enrolledStudents": ["student5"],
+    "videos": [
+      {
+        "title": "Introduction to Digital Marketing",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+        "duration": 1600,
+        "order": 0,
+        "subtitles": { "en": "Digital marketing is about connecting with your audience online..." },
+        "boardTextData": []
+      }
+    ],
+    "learningObjectives": [
+      "Understand SEO and SEM",
+      "Use social media for marketing",
+      "Measure campaign success with analytics"
+    ],
+    "prerequisites": ["Basic computer and internet skills"],
+    "tags": ["marketing", "seo", "social media"],
+    "isPublished": true,
+    "createdAt": "2024-05-01T00:00:00.000Z"
   }
 ]

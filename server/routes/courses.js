@@ -3,10 +3,35 @@ const router = express.Router();
 const { readJSON, writeJSON } = require("../db/jsonStore.js");
 const { v4: uuid } = require("uuid");
 
-// ✅ Get all courses
+// ✅ Get all courses (supports optional `search` and `category` query params)
 router.get("/", async (req, res) => {
   const courses = await readJSON("courses.json");
-  res.json(courses);
+
+  try {
+    let results = courses || [];
+    const { search, category } = req.query || {};
+
+    if (category) {
+      const cat = String(category).toLowerCase();
+      results = results.filter((c) => (c.category || "").toLowerCase() === cat);
+    }
+
+    if (search) {
+      const q = String(search).toLowerCase();
+      results = results.filter((c) => {
+        const title = (c.title || "").toLowerCase();
+        const desc = (c.description || "").toLowerCase();
+        const inst = (c.instructorName || "").toLowerCase();
+        const tags = (c.tags || []).join(" ").toLowerCase();
+        return title.includes(q) || desc.includes(q) || inst.includes(q) || tags.includes(q);
+      });
+    }
+
+    res.json(results);
+  } catch (err) {
+    console.error("Failed to filter courses:", err);
+    res.status(500).json(courses || []);
+  }
 });
 
 // ✅ Get single course
